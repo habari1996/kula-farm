@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#1a3a1a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Kula Farm"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<title>Kula Farm</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f0;min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:20px;}
+.header{background:#1a3a1a;padding:44px 16px 14px;color:white;position:sticky;top:0;z-index:100;}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.farm-name{font-size:22px;font-weight:600;color:#c8e6c9;}
+.farm-sub{font-size:11px;color:#81c784;margin-top:2px;}
+.header-badges{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;}
+.badge{border-radius:10px;padding:2px 10px;font-size:11px;font-weight:500;display:none;}
+.badge-offline{background:#d97706;color:white;}
+.badge-syncing{background:#2563eb;color:white;}
+.badge-synced{background:#16a34a;color:white;}
+.weather-pill{background:rgba(255,255,255,0.15);border-radius:20px;padding:6px 12px;font-size:13px;color:#e8f5e9;cursor:pointer;white-space:nowrap;}
+.nav{display:flex;background:#2d5a2d;overflow-x:auto;scrollbar-width:none;position:sticky;top:84px;z-index:99;}
+.nav::-webkit-scrollbar{display:none;}
+.nav button{flex:none;padding:11px 13px;font-size:12px;color:#a5d6a7;background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.2s;font-weight:500;}
+.nav button.active{color:#c8e6c9;border-bottom-color:#69f0ae;background:rgba(255,255,255,0.07);}
+.content{padding:14px;}
+.section{display:none;}
+.section.active{display:block;}
+.card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);}
+.card-title{font-size:11px;color:#6b7280;font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.7px;}
+.card-title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.card-title-row .card-title{margin-bottom:0;}
+.small-btn{background:#1a3a1a;color:#c8e6c9;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;}
+.sync-bar{border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;text-align:center;transition:all 0.3s;}
+.sync-bar.synced{background:#f0fdf4;color:#14532d;border:1px solid #86efac;}
+.sync-bar.syncing{background:#eff6ff;color:#1e3a8a;border:1px solid #93c5fd;}
+.sync-bar.offline{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;}
+.animal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.animal-card{background:#f9fafb;border-radius:12px;padding:12px;text-align:center;border:1.5px solid #e5e7eb;}
+.animal-icon{font-size:28px;margin-bottom:4px;}
+.animal-name{font-size:11px;color:#6b7280;font-weight:500;margin-bottom:2px;}
+.animal-count{font-size:22px;font-weight:600;color:#111827;}
+.animal-actions{display:flex;gap:6px;margin-top:8px;justify-content:center;}
+.a-btn{border:none;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;font-weight:600;}
+.a-minus{background:#fee2e2;color:#dc2626;}
+.a-plus{background:#dcfce7;color:#16a34a;}
+.a-del{background:#f3f4f6;color:#6b7280;font-size:11px;padding:6px 9px;}
+.add-animal-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.add-animal-row select,.add-animal-row input{flex:1;min-width:70px;padding:10px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;color:#111827;font-size:13px;outline:none;}
+.add-animal-row button{background:#1a3a1a;color:#c8e6c9;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6;}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{font-size:14px;color:#374151;}
+.stat-val{font-size:14px;font-weight:500;color:#111827;}
+.green{color:#16a34a;} .amber{color:#d97706;} .red-c{color:#dc2626;}
+.log-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6;align-items:flex-start;}
+.log-item:last-child{border-bottom:none;}
+.log-dot{width:9px;height:9px;border-radius:50%;background:#16a34a;margin-top:5px;flex-shrink:0;}
+.log-dot.warn{background:#d97706;} .log-dot.info{background:#2563eb;} .log-dot.red{background:#dc2626;}
+.log-text{font-size:14px;color:#111827;line-height:1.4;flex:1;}
+.log-time{font-size:11px;color:#9ca3af;margin-top:2px;}
+.del-btn{background:none;border:none;color:#d1d5db;font-size:16px;cursor:pointer;padding:0 4px;}
+.weather-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.day-card{background:#f9fafb;border-radius:10px;padding:10px 4px;text-align:center;}
+.day-name{font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;}
+.day-icon{font-size:18px;margin:4px 0;}
+.day-temp{font-size:15px;font-weight:600;color:#111827;}
+.day-rain{font-size:10px;color:#2563eb;margin-top:2px;}
+.big-weather{text-align:center;padding:16px 0;}
+.big-temp{font-size:48px;font-weight:300;color:#111827;}
+.big-cond{font-size:14px;color:#6b7280;margin-top:4px;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.summary-box{background:white;border-radius:14px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.07);}
+.summary-label{font-size:11px;color:#6b7280;font-weight:500;margin-bottom:4px;}
+.summary-num{font-size:20px;font-weight:600;}
+.inc{color:#16a34a;} .exp{color:#dc2626;}
+.finance-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:14px;}
+.finance-row:last-child{border-bottom:none;}
+.finance-label{color:#374151;flex:1;margin-right:8px;}
+.progress-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-top:8px;}
+.progress-fill{height:100%;background:#4caf50;border-radius:3px;}
+.calc-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.calc-tab{border:1.5px solid #e5e7eb;background:#f9fafb;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:500;color:#374151;cursor:pointer;}
+.calc-tab.active{background:#1a3a1a;color:#c8e6c9;border-color:#1a3a1a;}
+.calc-section{display:none;}
+.calc-section.active{display:block;}
+.calc-field{margin-bottom:12px;}
+.calc-field label{font-size:12px;color:#6b7280;font-weight:500;display:block;margin-bottom:4px;}
+.calc-field input,.calc-field select{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;color:#111827;font-size:14px;outline:none;}
+.calc-result{background:#f0fdf4;border-radius:12px;padding:14px;margin-top:12px;border-left:4px solid #16a34a;}
+.calc-result-title{font-size:11px;color:#16a34a;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.calc-result-row{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;border-bottom:1px solid #dcfce7;}
+.calc-result-row:last-child{border-bottom:none;font-weight:600;font-size:15px;padding-top:8px;}
+.calc-btn{background:#1a3a1a;color:#c8e6c9;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;width:100%;margin-top:4px;}
+.ai-tip-box{border-radius:12px;padding:14px;margin-bottom:12px;border-left:4px solid;}
+.ai-tip-label{font-size:10px;font-weight:700;letter-spacing:0.8px;margin-bottom:6px;text-transform:uppercase;}
+.ai-tip-text{font-size:14px;line-height:1.6;}
+.tip-green{background:#f0fdf4;border-color:#16a34a;}
+.tip-green .ai-tip-label{color:#16a34a;} .tip-green .ai-tip-text{color:#14532d;}
+.tip-blue{background:#eff6ff;border-color:#2563eb;}
+.tip-blue .ai-tip-label{color:#2563eb;} .tip-blue .ai-tip-text{color:#1e3a8a;}
+.chat-bubble{border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:14px;line-height:1.5;}
+.chat-you{background:#dcfce7;color:#14532d;border-bottom-right-radius:4px;}
+.chat-ai{background:#f3f4f6;color:#111827;border-bottom-left-radius:4px;}
+.chat-thinking{color:#9ca3af;font-style:italic;}
+.input-row{display:flex;gap:8px;margin-top:10px;}
+.input-row input{flex:1;padding:12px 14px;border-radius:12px;border:1.5px solid #e5e7eb;background:#f9fafb;color:#111827;font-size:14px;outline:none;}
+.input-row input:focus{border-color:#4caf50;}
+.input-row button{background:#1a3a1a;color:#c8e6c9;border:none;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:500;cursor:pointer;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;animation:slideUp 0.25s ease;max-height:85vh;overflow-y:auto;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h3{font-size:18px;font-weight:600;margin-bottom:16px;color:#111827;}
+.modal-field{margin-bottom:12px;}
+.modal-field label{font-size:12px;color:#6b7280;font-weight:500;display:block;margin-bottom:4px;}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;color:#111827;font-size:14px;font-family:inherit;outline:none;}
+.modal-field textarea{height:80px;resize:none;}
+.modal-btns{display:flex;gap:10px;margin-top:16px;}
+.modal-btns button{flex:1;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:500;cursor:pointer;}
+.btn-cancel{background:#f3f4f6;color:#374151;}
+.btn-save{background:#1a3a1a;color:#c8e6c9;}
+.install-banner{background:#e8f5e9;border:1.5px solid #86efac;border-radius:14px;padding:12px 14px;margin-bottom:12px;display:none;align-items:center;gap:10px;}
+.install-banner-text{flex:1;font-size:13px;color:#14532d;}
+.install-banner button{background:#1a3a1a;color:#c8e6c9;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;}
+.empty-state{text-align:center;padding:30px 16px;color:#9ca3af;font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="farm-name">🌿 Kula Farm</div>
+      <div class="farm-sub">14°57'S 28°18'E · Lusaka, Zambia</div>
+      <div class="header-badges">
+        <span class="badge badge-offline" id="b-offline">● Offline</span>
+        <span class="badge badge-syncing" id="b-syncing">↑ Syncing...</span>
+        <span class="badge badge-synced" id="b-synced">✓ Synced</span>
+      </div>
+    </div>
+    <div class="weather-pill" id="weather-pill" onclick="showTab('weather')">☀ --°C</div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="showTab('livestock')">🐷 Animals</button>
+  <button onclick="showTab('health')">💊 Health</button>
+  <button onclick="showTab('weather')">🌤 Weather</button>
+  <button onclick="showTab('finance')">💰 Finance</button>
+  <button onclick="showTab('calc')">🧮 Calc</button>
+  <button onclick="showTab('ai')">🤖 AI</button>
+</div>
+
+<div class="content">
+
+  <!-- ANIMALS -->
+  <div class="section active" id="tab-livestock">
+    <div class="install-banner" id="install-banner">
+      <div class="install-banner-text">📱 Install Kula Farm on your phone!</div>
+      <button onclick="installApp()">Install</button>
+    </div>
+    <div class="sync-bar syncing" id="sync-bar">🔄 Connecting to Kula Farm cloud...</div>
+    <div class="card">
+      <div class="card-title-row">
+        <div class="card-title">Animals on Farm — <span id="total-count">0</span></div>
+      </div>
+      <div class="animal-grid" id="animal-grid"><div class="empty-state" style="grid-column:span 2">Loading...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Add New Animal Type</div>
+      <div class="add-animal-row">
+        <select id="new-animal-type">
+          <option value="🐷 Pig">🐷 Pig</option>
+          <option value="🐽 Piglet">🐽 Piglet</option>
+          <option value="🐐 Goat">🐐 Goat</option>
+          <option value="🦆 Duck">🦆 Duck</option>
+          <option value="🐔 Chicken">🐔 Chicken</option>
+          <option value="🐄 Cattle">🐄 Cattle</option>
+          <option value="🐑 Sheep">🐑 Sheep</option>
+          <option value="🐇 Rabbit">🐇 Rabbit</option>
+          <option value="🦃 Turkey">🦃 Turkey</option>
+          <option value="🐟 Fish">🐟 Fish</option>
+          <option value="🐝 Bees">🐝 Bees</option>
+          <option value="🦌 Other">🦌 Other</option>
+        </select>
+        <input type="text" id="new-animal-name" placeholder="Custom name"/>
+        <input type="number" id="new-animal-count" placeholder="Count" min="1" style="max-width:75px;"/>
+        <button onclick="addAnimalType()">Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Today's Feeding Schedule</div>
+      <div id="feed-schedule"></div>
+    </div>
+  </div>
+
+  <!-- HEALTH -->
+  <div class="section" id="tab-health">
+    <div class="card">
+      <div class="card-title-row">
+        <div class="card-title">Health Logs</div>
+        <button class="small-btn" onclick="openModal('add-health')">+ Log</button>
+      </div>
+      <div id="health-log-list"><div class="empty-state">Loading...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Breeding Reference</div>
+      <div class="stat-row"><span class="stat-label">Pig gestation</span><span class="stat-val">114 days</span></div>
+      <div class="stat-row"><span class="stat-label">Goat gestation</span><span class="stat-val">150 days</span></div>
+      <div class="stat-row"><span class="stat-label">Pig heat cycle</span><span class="stat-val">Every 21 days</span></div>
+      <div class="stat-row"><span class="stat-label">Duck incubation</span><span class="stat-val">28 days</span></div>
+      <div class="stat-row"><span class="stat-label">Chicken incubation</span><span class="stat-val">21 days</span></div>
+    </div>
+  </div>
+
+  <!-- WEATHER -->
+  <div class="section" id="tab-weather">
+    <div class="card">
+      <div class="big-weather">
+        <div class="big-temp" id="w-temp">--°C</div>
+        <div class="big-cond" id="w-cond">Loading weather...</div>
+      </div>
+      <div class="stat-row"><span class="stat-label">Rain chance today</span><span class="stat-val" id="w-rain">--%</span></div>
+      <div class="stat-row"><span class="stat-label">Solar pump</span><span class="stat-val green">Active ✓</span></div>
+      <div class="stat-row"><span class="stat-label">Borehole</span><span class="stat-val green">Operational ✓</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">5-Day Forecast</div>
+      <div class="weather-grid" id="forecast-grid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Farm Alerts</div>
+      <div id="weather-alerts"><div class="log-item"><div class="log-dot info"></div><div><div class="log-text">Loading alerts...</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- FINANCE -->
+  <div class="section" id="tab-finance">
+    <div class="summary-grid">
+      <div class="summary-box"><div class="summary-label">Income (this month)</div><div class="summary-num inc" id="total-income">K 0</div></div>
+      <div class="summary-box"><div class="summary-label">Expenses (this month)</div><div class="summary-num exp" id="total-expense">K 0</div></div>
+    </div>
+    <div class="card">
+      <div class="stat-row"><span class="stat-label">Net profit this month</span><span class="stat-val green" id="net-profit">K 0</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="profit-bar" style="width:0%"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title-row">
+        <div class="card-title">Transactions</div>
+        <button class="small-btn" onclick="openModal('add-finance')">+ Add</button>
+      </div>
+      <div id="finance-list"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR -->
+  <div class="section" id="tab-calc">
+    <div class="calc-tabs">
+      <button class="calc-tab active" onclick="showCalc('feed',this)">Feed Cost</button>
+      <button class="calc-tab" onclick="showCalc('profit',this)">Profit</button>
+      <button class="calc-tab" onclick="showCalc('breed',this)">Breeding</button>
+      <button class="calc-tab" onclick="showCalc('weight',this)">Weight</button>
+      <button class="calc-tab" onclick="showCalc('water',this)">Water</button>
+    </div>
+    <div class="calc-section active" id="calc-feed">
+      <div class="card">
+        <div class="card-title">Daily Feed Cost Calculator</div>
+        <div class="calc-field"><label>Animal type</label><select id="fc-type" onchange="calcFeed()"><option value="pig">Pig (adult)</option><option value="piglet">Piglet</option><option value="goat">Goat</option><option value="chicken">Chicken</option><option value="duck">Duck</option><option value="cattle">Cattle</option></select></div>
+        <div class="calc-field"><label>Number of animals</label><input type="number" id="fc-count" value="6" min="1" oninput="calcFeed()"/></div>
+        <div class="calc-field"><label>Feed price per 50kg bag (ZMW)</label><input type="number" id="fc-price" value="450" min="1" oninput="calcFeed()"/></div>
+        <div class="calc-result"><div class="calc-result-title">Results</div><div id="fc-output"></div></div>
+      </div>
+    </div>
+    <div class="calc-section" id="calc-profit">
+      <div class="card">
+        <div class="card-title">Livestock Profit Calculator</div>
+        <div class="calc-field"><label>Animal type</label><select id="pp-type" onchange="calcProfit()"><option value="pig">Pig</option><option value="goat">Goat</option><option value="chicken">Chicken</option><option value="duck">Duck</option><option value="cattle">Cattle</option></select></div>
+        <div class="calc-field"><label>Number to sell</label><input type="number" id="pp-count" value="1" min="1" oninput="calcProfit()"/></div>
+        <div class="calc-field"><label>Selling price per animal (ZMW)</label><input type="number" id="pp-price" value="3000" oninput="calcProfit()"/></div>
+        <div class="calc-field"><label>Months raised</label><input type="number" id="pp-months" value="6" min="1" oninput="calcProfit()"/></div>
+        <div class="calc-field"><label>Feed cost per month per animal (ZMW)</label><input type="number" id="pp-feed" value="200" oninput="calcProfit()"/></div>
+        <div class="calc-field"><label>Vet/other costs per animal (ZMW)</label><input type="number" id="pp-vet" value="100" oninput="calcProfit()"/></div>
+        <div class="calc-result"><div class="calc-result-title">Profit Estimate</div><div id="pp-output"></div></div>
+      </div>
+    </div>
+    <div class="calc-section" id="calc-breed">
+      <div class="card">
+        <div class="card-title">Breeding Date Calculator</div>
+        <div class="calc-field"><label>Animal</label><select id="br-type" onchange="calcBreed()"><option value="114">Pig (114 days)</option><option value="150">Goat (150 days)</option><option value="283">Cattle (283 days)</option><option value="147">Sheep (147 days)</option><option value="28">Duck eggs (28 days)</option><option value="21">Chicken eggs (21 days)</option></select></div>
+        <div class="calc-field"><label>Mating / egg set date</label><input type="date" id="br-date" oninput="calcBreed()"/></div>
+        <div class="calc-result"><div class="calc-result-title">Expected Dates</div><div id="br-output"><div style="color:#9ca3af;font-size:13px">Select a date above</div></div></div>
+      </div>
+    </div>
+    <div class="calc-section" id="calc-weight">
+      <div class="card">
+        <div class="card-title">Feed-to-Weight Ratio</div>
+        <div class="calc-field"><label>Animal</label><select id="wf-type" onchange="calcWeight()"><option value="pig">Pig</option><option value="goat">Goat</option><option value="chicken">Chicken</option><option value="duck">Duck</option></select></div>
+        <div class="calc-field"><label>Current weight (kg)</label><input type="number" id="wf-current" value="30" min="1" oninput="calcWeight()"/></div>
+        <div class="calc-field"><label>Target weight (kg)</label><input type="number" id="wf-target" value="90" min="1" oninput="calcWeight()"/></div>
+        <div class="calc-result"><div class="calc-result-title">Feed Plan</div><div id="wf-output"></div></div>
+      </div>
+    </div>
+    <div class="calc-section" id="calc-water">
+      <div class="card">
+        <div class="card-title">Daily Water Needs</div>
+        <div id="water-inputs"></div>
+        <button class="calc-btn" onclick="calcWater()">Calculate</button>
+        <div id="wt-result" class="calc-result" style="display:none;"><div class="calc-result-title">Water Requirements</div><div id="wt-output"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI -->
+  <div class="section" id="tab-ai">
+    <div class="ai-tip-box tip-green">
+      <div class="ai-tip-label">🌱 AI Tip of the Day</div>
+      <div class="ai-tip-text">Pigs grow fastest between 20–90kg. Weigh monthly and adjust feed ratios. Your 6 pigs should reach market weight in about 4–5 months on good feed.</div>
+    </div>
+    <div class="ai-tip-box tip-blue">
+      <div class="ai-tip-label">💡 Farm Insight</div>
+      <div class="ai-tip-text">Sweet potato vines and cassava leaves are excellent cheap feed supplements for pigs and goats — consider planting some on your 10 hectares.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Ask the Farm AI</div>
+      <div id="ai-chat" style="max-height:350px;overflow-y:auto;margin-bottom:4px;"></div>
+      <div class="input-row">
+        <input type="text" id="ai-input" placeholder="Ask about your animals, feed, health..."/>
+        <button onclick="askAI()">Send</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Quick Questions</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button class="small-btn" onclick="quickAsk('What should I feed my pigs today?')">Pig feeding</button>
+        <button class="small-btn" onclick="quickAsk('How do I prevent disease in my goats?')">Goat health</button>
+        <button class="small-btn" onclick="quickAsk('How do I increase duck egg production?')">Duck eggs</button>
+        <button class="small-btn" onclick="quickAsk('What crops can I grow on 10 hectares in Lusaka?')">Crops</button>
+        <button class="small-btn" onclick="quickAsk('When is the best time to sell pigs in Zambia?')">Selling tips</button>
+        <button class="small-btn" onclick="quickAsk('How do I set up cheap drip irrigation?')">Irrigation</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-title">Modal</h3>
+    <div id="modal-body"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModalDirect()">Cancel</button>
+      <button class="btn-save" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://hungjbehticimlimthul.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1bmdqYmVodGljaW1saW10aHVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwODYyMzIsImV4cCI6MjA5MTY2MjIzMn0.lRdLMgW-R2bvPPdoqC9VgXGlPIoqD9UTPvUP9zweyus';
+
+const H = {'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
+
+async function sbGet(table, order='created_at') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?order=${order}.asc&select=*`, {headers:H});
+  return r.json();
+}
+async function sbInsert(table, data) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {method:'POST', headers:{...H,'Prefer':'return=representation'}, body:JSON.stringify(data)});
+  return r.json();
+}
+async function sbUpdate(table, id, data) {
+  await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {method:'PATCH', headers:H, body:JSON.stringify(data)});
+}
+async function sbDelete(table, id) {
+  await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {method:'DELETE', headers:H});
+}
+
+// Realtime via polling every 8 seconds
+let pollInterval;
+function startPolling() {
+  loadAll();
+  pollInterval = setInterval(loadAll, 8000);
+}
+
+async function loadAll() {
+  if(!navigator.onLine) { setSyncStatus('offline'); return; }
+  setSyncStatus('syncing');
+  try {
+    const [a, h, t] = await Promise.all([
+      sbGet('animals', 'order'),
+      sbGet('health', 'created_at'),
+      sbGet('transactions', 'created_at')
+    ]);
+    animals = Array.isArray(a) ? a : [];
+    healthLogs = Array.isArray(h) ? h.reverse() : [];
+    transactions = Array.isArray(t) ? t.reverse() : [];
+    renderAnimals(); renderHealthLogs(); renderFinance(); renderWaterInputs();
+    localStorage.setItem('kf_animals', JSON.stringify(animals));
+    localStorage.setItem('kf_health', JSON.stringify(healthLogs));
+    localStorage.setItem('kf_finance', JSON.stringify(transactions));
+    setSyncStatus('synced');
+  } catch(e) { setSyncStatus('offline'); loadFromCache(); }
+}
+
+function loadFromCache() {
+  try { animals = JSON.parse(localStorage.getItem('kf_animals')||'[]'); } catch(e){ animals=[]; }
+  try { healthLogs = JSON.parse(localStorage.getItem('kf_health')||'[]'); } catch(e){ healthLogs=[]; }
+  try { transactions = JSON.parse(localStorage.getItem('kf_finance')||'[]'); } catch(e){ transactions=[]; }
+  if(!animals.length) animals=[
+    {id:'seed1',type:'🐷 Pig',name:'Adult Pigs',count:6,order:1},
+    {id:'seed2',type:'🐽 Piglet',name:'Piglets',count:12,order:2},
+    {id:'seed3',type:'🐐 Goat',name:'Goats',count:18,order:3},
+    {id:'seed4',type:'🦆 Duck',name:'Ducks',count:30,order:4}
+  ];
+  renderAnimals(); renderHealthLogs(); renderFinance(); renderWaterInputs();
+}
+
+// State
+let animals=[], healthLogs=[], transactions=[];
+
+// Sync status
+function setSyncStatus(s) {
+  document.getElementById('b-offline').style.display = s==='offline'?'inline':'none';
+  document.getElementById('b-syncing').style.display = s==='syncing'?'inline':'none';
+  document.getElementById('b-synced').style.display = s==='synced'?'inline':'none';
+  const bar = document.getElementById('sync-bar');
+  bar.className = 'sync-bar '+s;
+  bar.textContent = s==='synced'?'✓ All devices synced — data updates every 8 seconds':s==='syncing'?'🔄 Syncing with cloud...':'⚠ Offline — changes saved locally, will sync when connected';
+}
+
+// ANIMALS
+function renderAnimals() {
+  const total = animals.reduce((s,a)=>s+a.count,0);
+  document.getElementById('total-count').textContent = total;
+  const grid = document.getElementById('animal-grid');
+  if(!animals.length){grid.innerHTML='<div class="empty-state" style="grid-column:span 2">No animals yet. Add below!</div>';return;}
+  grid.innerHTML = animals.map(a=>{
+    const emoji=a.type.split(' ')[0];
+    return `<div class="animal-card">
+      <div class="animal-icon">${emoji}</div>
+      <div class="animal-count">${a.count}</div>
+      <div class="animal-name">${a.name}</div>
+      <div class="animal-actions">
+        <button class="a-btn a-minus" onclick="changeCount('${a.id}',-1)">−</button>
+        <button class="a-btn a-plus" onclick="changeCount('${a.id}',1)">+</button>
+        <button class="a-btn a-del" onclick="deleteAnimal('${a.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function changeCount(id, delta) {
+  const a = animals.find(x=>x.id===id);
+  if(!a) return;
+  a.count = Math.max(0, a.count+delta);
+  renderAnimals();
+  try { await sbUpdate('animals', id, {count:a.count}); setSyncStatus('synced'); }
+  catch(e) { setSyncStatus('offline'); }
+}
+
+async function deleteAnimal(id) {
+  if(!confirm('Remove this animal type?')) return;
+  animals = animals.filter(x=>x.id!==id);
+  renderAnimals();
+  try { await sbDelete('animals', id); }
+  catch(e) { setSyncStatus('offline'); }
+}
+
+async function addAnimalType() {
+  const type = document.getElementById('new-animal-type').value;
+  const customName = document.getElementById('new-animal-name').value.trim();
+  const count = parseInt(document.getElementById('new-animal-count').value)||1;
+  const name = customName||(type.split(' ').slice(1).join(' ')+'s');
+  const data = {type,name,count,order:animals.length+1};
+  document.getElementById('new-animal-name').value='';
+  document.getElementById('new-animal-count').value='';
+  try {
+    const res = await sbInsert('animals', data);
+    if(Array.isArray(res)&&res[0]) animals.push(res[0]);
+    else animals.push({id:'local_'+Date.now(),...data});
+    renderAnimals(); renderWaterInputs(); setSyncStatus('synced');
+  } catch(e) { animals.push({id:'local_'+Date.now(),...data}); renderAnimals(); setSyncStatus('offline'); }
+}
+
+// FEED SCHEDULE
+const DEFAULT_FEEDS=[
+  {label:'Pigs — morning feed',done:false},
+  {label:'Goats — morning graze',done:false},
+  {label:'Ducks — afternoon feed',done:false},
+  {label:'Pigs — evening feed',done:false},
+  {label:'Piglets — check nursing',done:false}
+];
+let feeds = [...DEFAULT_FEEDS];
+
+function loadFeeds() {
+  const today = new Date().toDateString();
+  try { const s=localStorage.getItem('kf_feeds_'+today); if(s) feeds=JSON.parse(s); } catch(e){}
+  renderFeedSchedule();
+}
+function renderFeedSchedule() {
+  document.getElementById('feed-schedule').innerHTML = feeds.map((f,i)=>`
+    <div class="stat-row">
+      <span class="stat-label" style="${f.done?'text-decoration:line-through;color:#9ca3af':''}">${f.label}</span>
+      <span class="stat-val ${f.done?'green':'amber'}" onclick="toggleFeed(${i})" style="cursor:pointer">${f.done?'✓ Done':'○ Pending'}</span>
+    </div>`).join('');
+}
+function toggleFeed(i) {
+  feeds[i].done=!feeds[i].done;
+  localStorage.setItem('kf_feeds_'+new Date().toDateString(), JSON.stringify(feeds));
+  renderFeedSchedule();
+}
+
+// HEALTH
+function renderHealthLogs() {
+  const el=document.getElementById('health-log-list');
+  if(!healthLogs.length){el.innerHTML='<div class="empty-state">No health logs yet. Tap + Log to add one.</div>';return;}
+  el.innerHTML=healthLogs.slice(0,15).map(l=>`
+    <div class="log-item">
+      <div class="log-dot ${l.dot||''}"></div>
+      <div style="flex:1"><div class="log-text">${l.log_text||l.text||''}</div><div class="log-time">${l.log_time||l.time||''}</div></div>
+      <button class="del-btn" onclick="deleteHealthLog('${l.id}')">✕</button>
+    </div>`).join('');
+}
+async function deleteHealthLog(id) {
+  healthLogs=healthLogs.filter(x=>x.id!==id); renderHealthLogs();
+  try { await sbDelete('health', id); } catch(e){}
+}
+
+// FINANCE
+function renderFinance() {
+  const now=new Date(); let income=0,expense=0;
+  transactions.forEach(t=>{
+    const d=new Date(t.date||now);
+    if(d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()){
+      if(t.amount>0) income+=Number(t.amount); else expense+=Math.abs(Number(t.amount));
+    }
+  });
+  document.getElementById('total-income').textContent='K '+income.toLocaleString();
+  document.getElementById('total-expense').textContent='K '+expense.toLocaleString();
+  const profit=income-expense;
+  const el=document.getElementById('net-profit');
+  el.textContent=(profit>=0?'':'−')+'K '+Math.abs(profit).toLocaleString();
+  el.className='stat-val '+(profit>=0?'green':'red-c');
+  document.getElementById('profit-bar').style.width=income>0?Math.max(0,Math.min(100,Math.round((profit/income)*100)))+'%':'0%';
+  const fl=document.getElementById('finance-list');
+  if(!transactions.length){fl.innerHTML='<div class="empty-state">No transactions yet.</div>';return;}
+  fl.innerHTML=transactions.slice(0,15).map(t=>`
+    <div class="finance-row">
+      <span class="finance-label">${t.description||''}<br><span style="font-size:11px;color:#9ca3af">${t.date||''}</span></span>
+      <span class="${Number(t.amount)>0?'inc':'exp'}">${Number(t.amount)>0?'+':'-'}K ${Math.abs(Number(t.amount)).toLocaleString()}</span>
+      <button class="del-btn" onclick="deleteTx('${t.id}')">✕</button>
+    </div>`).join('');
+}
+async function deleteTx(id) {
+  transactions=transactions.filter(x=>x.id!==id); renderFinance();
+  try { await sbDelete('transactions', id); } catch(e){}
+}
+
+// MODAL
+let modalType='';
+function openModal(type) {
+  modalType=type;
+  const title=document.getElementById('modal-title');
+  const body=document.getElementById('modal-body');
+  const today=new Date().toISOString().split('T')[0];
+  if(type==='add-health') {
+    title.textContent='Log Health Event';
+    const opts=animals.map(a=>`<option>${a.name}</option>`).join('')+'<option>All animals</option>';
+    body.innerHTML=`
+      <div class="modal-field"><label>Animal</label><select id="m-animal">${opts}</select></div>
+      <div class="modal-field"><label>Status</label><select id="m-status"><option>Healthy</option><option>Sick</option><option>Injured</option><option>Treated</option><option>Born</option><option>Died</option><option>Vaccinated</option><option>Dewormed</option></select></div>
+      <div class="modal-field"><label>Notes</label><textarea id="m-notes" placeholder="What did you observe?"></textarea></div>`;
+  } else if(type==='add-finance') {
+    title.textContent='Record Transaction';
+    body.innerHTML=`
+      <div class="modal-field"><label>Type</label><select id="m-ftype"><option>Income</option><option>Expense</option></select></div>
+      <div class="modal-field"><label>Description</label><input id="m-desc" placeholder="e.g. Sold 2 pigs"/></div>
+      <div class="modal-field"><label>Amount (ZMW)</label><input id="m-amount" type="number" placeholder="0" min="0"/></div>
+      <div class="modal-field"><label>Date</label><input id="m-date" type="date" value="${today}"/></div>`;
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(e){if(e&&e.target!==document.getElementById('modal-overlay'))return;closeModalDirect();}
+function closeModalDirect(){document.getElementById('modal-overlay').classList.remove('open');}
+
+async function saveModal() {
+  if(modalType==='add-health') {
+    const animal=document.getElementById('m-animal').value;
+    const status=document.getElementById('m-status').value;
+    const notes=document.getElementById('m-notes').value;
+    const dotMap={Healthy:'',Vaccinated:'info',Dewormed:'info',Sick:'red',Injured:'warn',Treated:'info',Born:'info',Died:'red'};
+    const now=new Date();
+    const data={dot:dotMap[status]||'',log_text:`${animal} — ${status.toLowerCase()}${notes?' · '+notes:''}`,log_time:`${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`};
+    try { const res=await sbInsert('health',data); if(Array.isArray(res)&&res[0]) healthLogs.unshift(res[0]); else healthLogs.unshift({id:'local_'+Date.now(),...data}); }
+    catch(e) { healthLogs.unshift({id:'local_'+Date.now(),...data}); setSyncStatus('offline'); }
+    renderHealthLogs();
+  } else if(modalType==='add-finance') {
+    const ftype=document.getElementById('m-ftype').value;
+    const desc=document.getElementById('m-desc').value.trim();
+    const amount=parseFloat(document.getElementById('m-amount').value)||0;
+    const date=document.getElementById('m-date').value;
+    if(!desc||!amount) { closeModalDirect(); return; }
+    const data={description:desc,amount:ftype==='Income'?amount:-amount,date};
+    try { const res=await sbInsert('transactions',data); if(Array.isArray(res)&&res[0]) transactions.unshift(res[0]); else transactions.unshift({id:'local_'+Date.now(),...data}); }
+    catch(e) { transactions.unshift({id:'local_'+Date.now(),...data}); setSyncStatus('offline'); }
+    renderFinance();
+  }
+  closeModalDirect();
+}
+
+// TABS
+const TABS=['livestock','health','weather','finance','calc','ai'];
+function showTab(name) {
+  TABS.forEach(t=>{document.getElementById('tab-'+t).classList.toggle('active',t===name);});
+  document.querySelectorAll('.nav button').forEach((b,i)=>b.classList.toggle('active',TABS[i]===name));
+  if(name==='weather') fetchWeather();
+  if(name==='calc'){calcFeed();calcProfit();calcWeight();renderWaterInputs();}
+}
+
+// CALCULATORS
+function showCalc(name,btn) {
+  document.querySelectorAll('.calc-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.calc-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('calc-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(name==='water')renderWaterInputs();
+}
+const FEED_DATA={pig:{daily:2.5},piglet:{daily:0.5},goat:{daily:1.5},chicken:{daily:0.12},duck:{daily:0.15},cattle:{daily:8}};
+const FCR={pig:2.5,goat:2,chicken:2,duck:2.2,cattle:6};
+const GAIN={pig:0.6,goat:0.1,chicken:0.05,duck:0.06};
+function calcFeed(){
+  const type=document.getElementById('fc-type')?.value||'pig';
+  const count=parseInt(document.getElementById('fc-count')?.value)||1;
+  const price=parseFloat(document.getElementById('fc-price')?.value)||450;
+  const daily=FEED_DATA[type].daily*count;
+  const monthly=daily*30;
+  const ppkg=price/50;
+  document.getElementById('fc-output').innerHTML=`
+    <div class="calc-result-row"><span>Daily feed</span><span>${daily.toFixed(1)} kg</span></div>
+    <div class="calc-result-row"><span>Monthly feed</span><span>${monthly.toFixed(0)} kg</span></div>
+    <div class="calc-result-row"><span>Bags per month</span><span>${Math.ceil(monthly/50)} bags</span></div>
+    <div class="calc-result-row"><span>Daily cost</span><span>K ${Math.round(daily*ppkg)}</span></div>
+    <div class="calc-result-row"><span>Monthly cost</span><span>K ${Math.round(monthly*ppkg)}</span></div>`;
+}
+function calcProfit(){
+  const count=parseInt(document.getElementById('pp-count')?.value)||1;
+  const price=parseFloat(document.getElementById('pp-price')?.value)||0;
+  const months=parseInt(document.getElementById('pp-months')?.value)||1;
+  const feedPM=parseFloat(document.getElementById('pp-feed')?.value)||0;
+  const vet=parseFloat(document.getElementById('pp-vet')?.value)||0;
+  const revenue=count*price;
+  const feedT=count*feedPM*months;
+  const vetT=count*vet;
+  const totalCost=feedT+vetT;
+  const profit=revenue-totalCost;
+  const roi=totalCost>0?Math.round((profit/totalCost)*100):0;
+  document.getElementById('pp-output').innerHTML=`
+    <div class="calc-result-row"><span>Revenue</span><span>K ${revenue.toLocaleString()}</span></div>
+    <div class="calc-result-row"><span>Feed costs</span><span>K ${feedT.toLocaleString()}</span></div>
+    <div class="calc-result-row"><span>Vet/other</span><span>K ${vetT.toLocaleString()}</span></div>
+    <div class="calc-result-row"><span>Net profit</span><span style="color:${profit>=0?'#16a34a':'#dc2626'}">${profit>=0?'+':''}K ${profit.toLocaleString()}</span></div>
+    <div class="calc-result-row"><span>ROI</span><span>${roi}%</span></div>`;
+}
+function calcBreed(){
+  const days=parseInt(document.getElementById('br-type')?.value)||114;
+  const dateVal=document.getElementById('br-date')?.value;
+  if(!dateVal)return;
+  const start=new Date(dateVal);
+  const due=new Date(start); due.setDate(due.getDate()+days);
+  const prep=new Date(due); prep.setDate(prep.getDate()-7);
+  const fmt=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('br-output').innerHTML=`
+    <div class="calc-result-row"><span>Mating/set date</span><span>${fmt(start)}</span></div>
+    <div class="calc-result-row"><span>Gestation</span><span>${days} days</span></div>
+    <div class="calc-result-row"><span>Prepare on</span><span>${fmt(prep)}</span></div>
+    <div class="calc-result-row"><span>Expected due</span><span><b>${fmt(due)}</b></span></div>`;
+}
+function calcWeight(){
+  const type=document.getElementById('wf-type')?.value||'pig';
+  const current=parseFloat(document.getElementById('wf-current')?.value)||1;
+  const target=parseFloat(document.getElementById('wf-target')?.value)||1;
+  const gain=target-current;
+  if(gain<=0){document.getElementById('wf-output').innerHTML='<div style="color:#9ca3af;font-size:13px">Target must be higher than current weight</div>';return;}
+  const totalFeed=Math.round(gain*FCR[type]);
+  const days=Math.round(gain/(GAIN[type]||0.1));
+  document.getElementById('wf-output').innerHTML=`
+    <div class="calc-result-row"><span>Weight to gain</span><span>${gain.toFixed(1)} kg</span></div>
+    <div class="calc-result-row"><span>Total feed needed</span><span>${totalFeed} kg</span></div>
+    <div class="calc-result-row"><span>Daily feed</span><span>${(totalFeed/days).toFixed(1)} kg/day</span></div>
+    <div class="calc-result-row"><span>Time to target</span><span>~${Math.round(days/7)} weeks</span></div>`;
+}
+const WATER={'🐷 Pig':15,'🐽 Piglet':3,'🐐 Goat':5,'🦆 Duck':1,'🐔 Chicken':0.5,'🐄 Cattle':50,'🐑 Sheep':4,'🐇 Rabbit':0.5,'🦃 Turkey':0.8,'🐟 Fish':0,'🐝 Bees':0,'🦌 Other':5};
+function renderWaterInputs(){
+  const el=document.getElementById('water-inputs');
+  if(!el)return;
+  if(!animals.length){el.innerHTML='<div class="empty-state">Add animals first.</div>';return;}
+  el.innerHTML=animals.map((a,i)=>`<div class="calc-field"><label>${a.name} (${a.count})</label><input type="number" id="wt-${i}" value="${a.count}" min="0"/></div>`).join('');
+}
+function calcWater(){
+  let total=0; const rows=[];
+  animals.forEach((a,i)=>{
+    const count=parseInt(document.getElementById('wt-'+i)?.value)||0;
+    const litres=count*(WATER[a.type]||5); total+=litres;
+    if(litres>0)rows.push(`<div class="calc-result-row"><span>${a.name} (${count})</span><span>${litres}L</span></div>`);
+  });
+  const el=document.getElementById('wt-result'); el.style.display='block';
+  document.getElementById('wt-output').innerHTML=rows.join('')+`<div class="calc-result-row"><span>Total daily water</span><span>${total}L</span></div><div class="calc-result-row"><span>Pump time*</span><span>~${Math.ceil(total/100)} min</span></div>`;
+}
+
+// WEATHER
+async function fetchWeather(){
+  if(!navigator.onLine)return;
+  try{
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=-14.9588&longitude=28.3138&current=temperature_2m,weathercode&daily=temperature_2m_max,precipitation_probability_max&timezone=Africa/Lusaka&forecast_days=5');
+    const d=await r.json();
+    const temp=Math.round(d.current.temperature_2m);
+    document.getElementById('w-temp').textContent=temp+'°C';
+    document.getElementById('weather-pill').textContent='☀ '+temp+'°C';
+    document.getElementById('w-rain').textContent=d.daily.precipitation_probability_max[0]+'%';
+    const wc=d.current.weathercode;
+    let cond='Clear skies';
+    if(wc>=80)cond='Heavy rain';else if(wc>=60)cond='Rainy';else if(wc>=30)cond='Overcast';else if(wc>=1)cond='Partly cloudy';
+    document.getElementById('w-cond').textContent=cond+' · Kula Farm';
+    const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    document.getElementById('forecast-grid').innerHTML=d.daily.time.slice(0,5).map((t,i)=>{
+      const dt=new Date(t),r=d.daily.precipitation_probability_max[i];
+      const icon=r>60?'🌧':r>30?'🌦':r>10?'⛅':'☀';
+      return `<div class="day-card"><div class="day-name">${days[dt.getDay()]}</div><div class="day-icon">${icon}</div><div class="day-temp">${Math.round(d.daily.temperature_2m_max[i])}°</div><div class="day-rain">${r}%</div></div>`;
+    }).join('');
+    const maxRain=Math.max(...d.daily.precipitation_probability_max.slice(0,5));
+    const alerts=[];
+    if(maxRain>50)alerts.push({dot:'warn',text:'Heavy rain expected — check drainage and shelters'});
+    else if(maxRain>20)alerts.push({dot:'info',text:'Light rain possible — top up water storage'});
+    else alerts.push({dot:'',text:'Dry week — great for grazing, keep water troughs full'});
+    if(temp>30)alerts.push({dot:'warn',text:'High temperatures — provide shade and extra water for pigs'});
+    document.getElementById('weather-alerts').innerHTML=alerts.map(a=>`<div class="log-item"><div class="log-dot ${a.dot}"></div><div><div class="log-text">${a.text}</div></div></div>`).join('');
+  }catch(e){}
+}
+
+// AI
+const OFFLINE_TIPS=['Pigs thrive on maize bran, soya, and kitchen scraps. Feed twice daily.','Goats are browsers — let them access bush perimeter daily.','Duck eggs take 28 days to hatch. Turn eggs 3 times daily.','Deworm pigs and goats every 3–4 months.','Pigs need 15L of water per day.','Rotate goat grazing every 2 weeks to prevent parasite buildup.'];
+async function askAI(question){
+  const input=document.getElementById('ai-input');
+  const q=question||input.value.trim(); if(!q)return;
+  if(!question)input.value='';
+  const chat=document.getElementById('ai-chat');
+  const qDiv=document.createElement('div'); qDiv.className='chat-bubble chat-you'; qDiv.textContent=q; chat.appendChild(qDiv);
+  const aDiv=document.createElement('div'); aDiv.className='chat-bubble chat-ai chat-thinking'; aDiv.textContent='Thinking...'; chat.appendChild(aDiv);
+  chat.scrollTop=chat.scrollHeight;
+  if(!navigator.onLine){setTimeout(()=>{aDiv.className='chat-bubble chat-ai';aDiv.textContent='[Offline] '+OFFLINE_TIPS[Math.floor(Math.random()*OFFLINE_TIPS.length)];chat.scrollTop=chat.scrollHeight;},500);return;}
+  const summary=animals.map(a=>`${a.count} ${a.name}`).join(', ')||'various animals';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are an AI farm advisor for Kula Farm near Lusaka, Zambia. Farm: ${summary}. 10 hectares, solar borehole pump, wire-fenced, no irrigation yet. Practical concise advice for small-scale Zambian farming. Under 100 words. Warm and encouraging.`,messages:[{role:'user',content:q}]})});
+    const data=await res.json();
+    aDiv.className='chat-bubble chat-ai'; aDiv.textContent=data.content?.[0]?.text||'Sorry, no response.';
+  }catch(e){aDiv.className='chat-bubble chat-ai';aDiv.textContent=OFFLINE_TIPS[Math.floor(Math.random()*OFFLINE_TIPS.length)];}
+  chat.scrollTop=chat.scrollHeight;
+}
+function quickAsk(q){showTab('ai');setTimeout(()=>askAI(q),100);}
+document.getElementById('ai-input').addEventListener('keydown',e=>{if(e.key==='Enter')askAI();});
+
+// PWA
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('install-banner').style.display='flex';});
+function installApp(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;document.getElementById('install-banner').style.display='none';});}}
+window.addEventListener('appinstalled',()=>document.getElementById('install-banner').style.display='none');
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.addEventListener('online',()=>loadAll());
+window.addEventListener('offline',()=>setSyncStatus('offline'));
+
+// INIT
+document.getElementById('br-date').value=new Date().toISOString().split('T')[0];
+loadFeeds();
+startPolling();
+calcFeed(); calcProfit(); calcWeight();
+fetchWeather();
+</script>
+</body>
+</html>
